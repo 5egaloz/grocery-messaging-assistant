@@ -1,73 +1,69 @@
-# Grocery Messaging Assistant
+# Sistema de Gestión — Tienda de Abarrotes
 
-Asistente autónomo de mensajería para tienda de abarrotes de barrio.
+Panel de administración completo con agente IA integrado para tiendas de barrio.
 
-Analiza el historial de compras de cada cliente y el inventario disponible para decidir si vale la pena enviar un mensaje y, si corresponde, lo redacta de forma cercana y personalizada.
+## Funcionalidades
 
-## Cómo funciona
+- **Dashboard** — ventas del día, stock bajo, análisis IA en tiempo real
+- **Ventas** — registro de ventas con descuento automático de inventario
+- **Clientes** — historial de compras, generación de mensajes personalizados por IA
+- **Inventario** — control de stock, ofertas, alertas automáticas
+- **Caja** — apertura, cierre, cuadre y análisis IA de diferencias
+- **Mensajes** — generación y registro de mensajes WhatsApp por cliente
+- **Reportes** — KPIs semanales, gráficos, reporte narrativo semanal por IA
 
-**Paso 1 — Decide si enviar:**
-- No envía si el cliente recibió un mensaje hace menos de 5 días
-- No envía si tiene menos de 3 compras registradas
-- No envía si el inventario no tiene nada relacionado con su perfil
+## Agente IA
 
-**Paso 2 — Determina qué decirle** (en orden de prioridad):
-1. Productos que compra frecuentemente y podrían estarle faltando
-2. Productos habituales que están en oferta
-3. Ofertas que complementan su perfil
+Usa la API de Anthropic con **prompt caching** para minimizar el uso de tokens:
 
-**Paso 3 — Redacta el mensaje:**
-- Tono cercano, de barrio
-- Máximo 2 emojis
-- Firmado con el nombre del dueño
-
-## Uso
-
-```python
-from assistant import evaluar_y_redactar
-
-datos = {
-    "nombre_cliente": "María",
-    "telefono": "+56912345678",
-    "historial_compras": [
-        {"producto": "Arroz 5kg", "cantidad": 1, "fecha": "2026-03-01"},
-        {"producto": "Aceite", "cantidad": 2, "fecha": "2026-03-15"},
-        {"producto": "Arroz 5kg", "cantidad": 1, "fecha": "2026-03-28"},
-    ],
-    "ultimo_mensaje_enviado": "2026-04-10",
-    "inventario": [
-        {"producto": "Arroz 5kg", "precio": 4990, "oferta": True, "stock": 20},
-        {"producto": "Aceite", "precio": 2490, "oferta": False, "stock": 10},
-        {"producto": "Fideos", "precio": 890, "oferta": True, "stock": 50},
-    ],
-    "nombre_dueño": "Don Pedro",
-}
-
-resultado = evaluar_y_redactar(datos)
-print(resultado)
-```
-
-**Salida posible:**
-```
-Hola María, cómo estás. Pasaba a avisarte que tenemos Arroz 5kg a $4990 y está en oferta. Cualquier cosa me avisas 🙂 — Don Pedro
-```
-
-Si no corresponde enviar:
-```
-NO_ENVIAR
-```
-
-## Estructura del input
-
-| Campo | Tipo | Descripción |
+| Tarea | Modelo | Tokens aprox. |
 |---|---|---|
-| `nombre_cliente` | string | Nombre del cliente |
-| `telefono` | string | Número de contacto |
-| `historial_compras` | lista | `{producto, cantidad, fecha}` |
-| `ultimo_mensaje_enviado` | string \| null | Fecha del último mensaje enviado (`YYYY-MM-DD`) |
-| `inventario` | lista | `{producto, precio, oferta, stock}` |
-| `nombre_dueño` | string | Nombre con el que se firma |
+| Análisis diario | Haiku | ~300 |
+| Sugerencia de ofertas | Haiku | ~350 |
+| Mensaje por cliente | Haiku | ~200 |
+| Análisis cierre de caja | Haiku | ~250 |
+| Reporte semanal KPI | Sonnet | ~800 |
 
-## Requisitos
+El sistema prompt y los datos de inventario se cachean entre llamadas consecutivas.
 
-Python 3.10+. Sin dependencias externas.
+## Instalación
+
+### Backend
+
+```bash
+cd backend
+pip install -r requirements.txt
+cp ../.env.example .env
+# Editar .env con tu ANTHROPIC_API_KEY
+uvicorn main:app --reload
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Scheduler (mensajes y reportes automáticos)
+
+```bash
+cd backend
+python scheduler.py
+```
+
+## Estructura
+
+```
+├── backend/
+│   ├── main.py          # API FastAPI
+│   ├── agent.py         # Agente IA (Claude API + caching)
+│   ├── database.py      # SQLite
+│   ├── scheduler.py     # Tareas automáticas
+│   └── routers/         # Endpoints por módulo
+└── frontend/
+    └── src/
+        ├── pages/       # Dashboard, Clientes, Inventario, Caja, Ventas, Mensajes, Reportes
+        └── api/         # Cliente HTTP
+```
